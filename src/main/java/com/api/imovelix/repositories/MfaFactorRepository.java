@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface MfaFactorRepository extends JpaRepository<MfaFactor, Long>  {
     List<MfaFactor> findByUserAuthenticationId(Long userAuthenticationId);
+
+    List<MfaFactor> findByUserAuthenticationIdAndActiveTrue(Long userAuthenticationId);
 }

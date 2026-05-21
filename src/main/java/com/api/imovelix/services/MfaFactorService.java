@@ -11,12 +11,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.api.imovelix.dto.request.RegisterMfaFactorRequest;
+import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.MfaFactorResponse;
 import com.api.imovelix.mappers.MfaFactorMapper;
 import com.api.imovelix.models.MfaFactor;
 import com.api.imovelix.models.UserAuthentication;
 import com.api.imovelix.repositories.MfaFactorRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
+import com.api.imovelix.services.security.CurrentUserService;
+import com.api.imovelix.services.security.SecretEncryptionService;
+import com.api.imovelix.services.security.TotpService;
 
 @Service
 public class MfaFactorService {
@@ -25,28 +29,40 @@ public class MfaFactorService {
     private final MfaFactorRepository mfaFactorRepository;
     private final UserAuthenticationRepository userAuthenticationRepository;
     private final MfaFactorMapper mfaFactorMapper;
+    private final CurrentUserService currentUserService;
+    private final TotpService totpService;
+    private final SecretEncryptionService secretEncryptionService;
 
     public MfaFactorService(
         MfaFactorRepository mfaFactorRepository,
         UserAuthenticationRepository userAuthenticationRepository,
-        MfaFactorMapper mfaFactorMapper
+        MfaFactorMapper mfaFactorMapper,
+        CurrentUserService currentUserService,
+        TotpService totpService,
+        SecretEncryptionService secretEncryptionService
     ) {
         this.mfaFactorRepository = mfaFactorRepository;
         this.userAuthenticationRepository = userAuthenticationRepository;
         this.mfaFactorMapper = mfaFactorMapper;
+        this.currentUserService = currentUserService;
+        this.totpService = totpService;
+        this.secretEncryptionService = secretEncryptionService;
     }
 
     @Transactional
     public MfaFactorResponse create(RegisterMfaFactorRequest request) {
+        currentUserService.requireCurrentAuthentication(request.userAuthenticationId());
         UserAuthentication authentication = userAuthenticationRepository.findById(request.userAuthenticationId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Authentication not found"));
 
-        MfaFactor mfaFactor = mfaFactorMapper.toEntity(request, generateSecret(), authentication);
-        return mfaFactorMapper.toResponse(mfaFactorRepository.save(mfaFactor));
+        String setupSecret = generateSecret();
+        MfaFactor mfaFactor = mfaFactorMapper.toEntity(request, secretEncryptionService.encrypt(setupSecret), authentication);
+        return mfaFactorMapper.toSetupResponse(mfaFactorRepository.save(mfaFactor), setupSecret);
     }
 
     @Transactional(readOnly = true)
     public List<MfaFactorResponse> findByAuthentication(Long authenticationId) {
+        currentUserService.requireCurrentAuthentication(authenticationId);
         return mfaFactorRepository.findByUserAuthenticationId(authenticationId)
             .stream()
             .map(mfaFactorMapper::toResponse)
@@ -54,8 +70,13 @@ public class MfaFactorService {
     }
 
     @Transactional
-    public MfaFactorResponse activate(Long id) {
+    public MfaFactorResponse activate(Long id, VerifyMfaRequest request) {
         MfaFactor factor = getEntity(id);
+        currentUserService.requireCurrentAuthentication(factor.getUserAuthentication().getId());
+        if (!factor.getId().equals(request.mfaFactorId())
+            || !totpService.verify(secretEncryptionService.decrypt(factor.getEncryptedSecret()), request.code())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid MFA code");
+        }
         factor.setActive(true);
         factor.setConfirmedAt(LocalDateTime.now());
         factor.getUserAuthentication().setMfaEnabled(true);
@@ -65,6 +86,7 @@ public class MfaFactorService {
     @Transactional
     public MfaFactorResponse deactivate(Long id) {
         MfaFactor factor = getEntity(id);
+        currentUserService.requireCurrentAuthentication(factor.getUserAuthentication().getId());
         factor.setActive(false);
         factor.getUserAuthentication().setMfaEnabled(hasOtherActiveFactor(factor));
         return mfaFactorMapper.toResponse(mfaFactorRepository.save(factor));

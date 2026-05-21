@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.api.imovelix.dto.request.RegisterMfaFactorRequest;
+import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.MfaFactorResponse;
 import com.api.imovelix.services.MfaFactorService;
 
@@ -40,8 +41,11 @@ public class MfaFactorController {
     }
 
     @PatchMapping("/{id}/activate")
-    public MfaFactorResponse activate(@PathVariable @Positive Long id) {
-        return mfaFactorService.activate(id);
+    public MfaFactorResponse activate(
+        @PathVariable @Positive Long id,
+        @Valid @RequestBody VerifyMfaRequest request
+    ) {
+        return mfaFactorService.activate(id, request);
     }
 
     @PatchMapping("/{id}/deactivate")

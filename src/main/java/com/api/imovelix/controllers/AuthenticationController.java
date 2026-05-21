@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.api.imovelix.dto.request.LoginRequest;
 import com.api.imovelix.dto.request.UpdatePasswordRequest;
+import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.AuthInfoResponse;
 import com.api.imovelix.dto.response.LoginResponse;
 import com.api.imovelix.services.AuthenticationService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 
@@ -29,8 +31,13 @@ public class AuthenticationController {
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
-        return authenticationService.login(request);
+    public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        return authenticationService.login(request, clientIp(httpRequest));
+    }
+
+    @PostMapping("/mfa/verify")
+    public LoginResponse verifyMfa(@Valid @RequestBody VerifyMfaRequest request) {
+        return authenticationService.verifyMfa(request);
     }
 
     @GetMapping("/{authenticationId}")
@@ -45,5 +52,14 @@ public class AuthenticationController {
         @Valid @RequestBody UpdatePasswordRequest request
     ) {
         authenticationService.updatePassword(authenticationId, request);
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
     }
 }

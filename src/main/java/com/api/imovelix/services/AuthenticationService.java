@@ -9,49 +9,117 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.api.imovelix.dto.request.LoginRequest;
 import com.api.imovelix.dto.request.UpdatePasswordRequest;
+import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.AuthInfoResponse;
 import com.api.imovelix.dto.response.LoginResponse;
 import com.api.imovelix.mappers.SystemUserMapper;
 import com.api.imovelix.mappers.UserAuthenticationMapper;
+import com.api.imovelix.models.MfaFactor;
 import com.api.imovelix.models.UserAuthentication;
+import com.api.imovelix.repositories.MfaFactorRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
+import com.api.imovelix.services.security.CurrentUserService;
 import com.api.imovelix.services.security.JwtService;
+import com.api.imovelix.services.security.LoginAttemptService;
 import com.api.imovelix.services.security.PasswordHasher;
+import com.api.imovelix.services.security.SecretEncryptionService;
+import com.api.imovelix.services.security.TotpService;
 
 @Service
 public class AuthenticationService {
     private final UserAuthenticationRepository userAuthenticationRepository;
     private final UserAuthenticationMapper userAuthenticationMapper;
+    private final MfaFactorRepository mfaFactorRepository;
     private final SystemUserMapper systemUserMapper;
     private final PasswordHasher passwordHasher;
     private final JwtService jwtService;
+    private final CurrentUserService currentUserService;
+    private final LoginAttemptService loginAttemptService;
+    private final TotpService totpService;
+    private final SecretEncryptionService secretEncryptionService;
 
     public AuthenticationService(
         UserAuthenticationRepository userAuthenticationRepository,
         UserAuthenticationMapper userAuthenticationMapper,
+        MfaFactorRepository mfaFactorRepository,
         SystemUserMapper systemUserMapper,
         PasswordHasher passwordHasher,
-        JwtService jwtService
+        JwtService jwtService,
+        CurrentUserService currentUserService,
+        LoginAttemptService loginAttemptService,
+        TotpService totpService,
+        SecretEncryptionService secretEncryptionService
     ) {
         this.userAuthenticationRepository = userAuthenticationRepository;
         this.userAuthenticationMapper = userAuthenticationMapper;
+        this.mfaFactorRepository = mfaFactorRepository;
         this.systemUserMapper = systemUserMapper;
         this.passwordHasher = passwordHasher;
         this.jwtService = jwtService;
+        this.currentUserService = currentUserService;
+        this.loginAttemptService = loginAttemptService;
+        this.totpService = totpService;
+        this.secretEncryptionService = secretEncryptionService;
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request, String clientIp) {
+        String rateLimitKey = loginKey(request.email(), clientIp);
+        loginAttemptService.assertAllowed(rateLimitKey);
+
         UserAuthentication authentication = userAuthenticationRepository.findByEmail(request.email())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+            .orElseThrow(() -> {
+                loginAttemptService.recordFailure(rateLimitKey);
+                return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            });
 
         if (!Boolean.TRUE.equals(authentication.getUser().getActive())
             || !passwordHasher.matches(request.password(), authentication.getPasswordHash())) {
+            loginAttemptService.recordFailure(rateLimitKey);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
         authentication.setLastLogin(LocalDateTime.now());
         userAuthenticationRepository.save(authentication);
+        loginAttemptService.recordSuccess(rateLimitKey);
+
+        if (Boolean.TRUE.equals(authentication.getMfaEnabled())) {
+            MfaFactor factor = firstActiveMfaFactor(authentication.getId());
+            return new LoginResponse(
+                null,
+                "MFA_REQUIRED",
+                0L,
+                systemUserMapper.toResponse(authentication.getUser()),
+                true,
+                factor.getId()
+            );
+        }
+
+        return new LoginResponse(
+            jwtService.generateToken(authentication),
+            "Bearer",
+            jwtService.getExpirationSeconds(),
+            systemUserMapper.toResponse(authentication.getUser())
+        );
+    }
+
+    @Transactional
+    public LoginResponse verifyMfa(VerifyMfaRequest request) {
+        MfaFactor factor = mfaFactorRepository.findById(request.mfaFactorId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "MFA factor not found"));
+
+        if (!Boolean.TRUE.equals(factor.getActive())
+            || !totpService.verify(secretEncryptionService.decrypt(factor.getEncryptedSecret()), request.code())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid MFA code");
+        }
+
+        factor.setLastUsedAt(LocalDateTime.now());
+        mfaFactorRepository.save(factor);
+
+        UserAuthentication authentication = factor.getUserAuthentication();
+        if (!Boolean.TRUE.equals(authentication.getUser().getActive())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
 
         return new LoginResponse(
             jwtService.generateToken(authentication),
@@ -63,11 +131,13 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AuthInfoResponse getAuthInfo(Long authenticationId) {
+        currentUserService.requireCurrentAuthentication(authenticationId);
         return userAuthenticationMapper.toResponse(getEntity(authenticationId));
     }
 
     @Transactional
     public void updatePassword(Long authenticationId, UpdatePasswordRequest request) {
+        currentUserService.requireCurrentAuthentication(authenticationId);
         UserAuthentication authentication = getEntity(authenticationId);
         if (!passwordHasher.matches(request.currentPassword(), authentication.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid current password");
@@ -81,5 +151,16 @@ public class AuthenticationService {
     public UserAuthentication getEntity(Long authenticationId) {
         return userAuthenticationRepository.findById(authenticationId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Authentication not found"));
+    }
+
+    private MfaFactor firstActiveMfaFactor(Long authenticationId) {
+        return mfaFactorRepository.findByUserAuthenticationIdAndActiveTrue(authenticationId)
+            .stream()
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "MFA is enabled without an active factor"));
+    }
+
+    private String loginKey(String email, String clientIp) {
+        return (email == null ? "" : email.trim().toLowerCase()) + "|" + (clientIp == null ? "" : clientIp);
     }
 }

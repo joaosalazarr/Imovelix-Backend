@@ -32,4 +32,16 @@ public class MfaFactorMapper {
             mfaFactor.getLastUsedAt()
         );
     }
+
+    public MfaFactorResponse toSetupResponse(MfaFactor mfaFactor, String setupSecret) {
+        return new MfaFactorResponse(
+            mfaFactor.getId(),
+            mfaFactor.getType(),
+            mfaFactor.getActive(),
+            mfaFactor.getCreatedAt(),
+            mfaFactor.getConfirmedAt(),
+            mfaFactor.getLastUsedAt(),
+            setupSecret
+        );
+    }
 }
