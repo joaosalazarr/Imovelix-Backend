@@ -40,8 +40,8 @@ public class SystemUserMapper {
         return new SystemUserResponse(
             systemUser.getId(),
             systemUser.getName(),
-            systemUser.getCpf(),
-            systemUser.getPhoneNumber(),
+            maskCpf(systemUser.getCpf()),
+            maskPhone(systemUser.getPhoneNumber()),
             systemUser.getAuth() == null ? null : systemUser.getAuth().getEmail(),
             systemUser.getActive()
         );
@@ -53,5 +53,21 @@ public class SystemUserMapper {
 
     public SystemUserResponse toSystemUserResponse(SystemUser systemUser) {
         return toResponse(systemUser);
+    }
+
+    private String maskCpf(String cpf) {
+        if (cpf == null || cpf.length() < 11) {
+            return cpf;
+        }
+
+        return cpf.substring(0, 3) + ".***.***-" + cpf.substring(cpf.length() - 2);
+    }
+
+    private String maskPhone(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.length() < 4) {
+            return phoneNumber;
+        }
+
+        return "***" + phoneNumber.substring(phoneNumber.length() - 4);
     }
 }
