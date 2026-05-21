@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -64,10 +66,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
+            Long userId = jwtService.extractUserId(token);
+            AuthenticatedUser authenticatedUser = new AuthenticatedUser(authenticationId, userId);
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                authenticatedUser,
+                null,
+                java.util.List.of()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             request.setAttribute(AUTHENTICATION_ID_ATTRIBUTE, authenticationId);
-            request.setAttribute(USER_ID_ATTRIBUTE, jwtService.extractUserId(token));
+            request.setAttribute(USER_ID_ATTRIBUTE, userId);
             filterChain.doFilter(request, response);
         } catch (RuntimeException exception) {
+            SecurityContextHolder.clearContext();
             writeUnauthorized(response, request, "Invalid or expired token");
         }
     }
@@ -79,6 +90,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return path.startsWith(API_PREFIX)
             && !"OPTIONS".equalsIgnoreCase(method)
             && !("POST".equalsIgnoreCase(method) && "/api/v1/auth/login".equals(path))
+            && !("POST".equalsIgnoreCase(method) && "/api/v1/auth/mfa/verify".equals(path))
             && !("POST".equalsIgnoreCase(method) && "/api/v1/users".equals(path));
     }
 
