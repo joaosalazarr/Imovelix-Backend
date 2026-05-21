@@ -47,6 +47,7 @@ public class TaxCalculationService {
     @Transactional
     public TaxCalculationResponse create(RegisterTaxCalculationRequest request) {
         Property property = propertyService.getEntity(request.propertyId());
+        propertyService.requirePropertyOwner(property);
         Tax tax = taxService.getEntity(request.taxId());
         TaxCalculation taxCalculation = taxCalculationRepository.save(taxCalculationMapper.toEntity(request, property, tax));
 
@@ -55,6 +56,7 @@ public class TaxCalculationService {
 
     @Transactional(readOnly = true)
     public List<TaxCalculationSummaryResponse> findByProperty(Long propertyId) {
+        propertyService.requirePropertyOwner(propertyService.getEntity(propertyId));
         return taxCalculationRepository.findByPropertyId(propertyId)
             .stream()
             .map(taxCalculationMapper::toSummaryResponse)
@@ -63,17 +65,25 @@ public class TaxCalculationService {
 
     @Transactional(readOnly = true)
     public TaxCalculationResponse findById(Long id) {
-        return toResponse(getEntity(id));
+        TaxCalculation taxCalculation = getEntity(id);
+        propertyService.requirePropertyOwner(taxCalculation.getProperty());
+        return toResponse(taxCalculation);
     }
 
     @Transactional
     public void delete(Long id) {
-        taxCalculationRepository.delete(getEntity(id));
+        TaxCalculation taxCalculation = getEntity(id);
+        propertyService.requirePropertyOwner(taxCalculation.getProperty());
+        taxCalculationRepository.delete(taxCalculation);
     }
 
     public TaxCalculation getEntity(Long id) {
         return taxCalculationRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tax calculation not found"));
+    }
+
+    public void requireTaxCalculationOwner(TaxCalculation taxCalculation) {
+        propertyService.requirePropertyOwner(taxCalculation.getProperty());
     }
 
     private TaxCalculationResponse toResponse(TaxCalculation taxCalculation) {

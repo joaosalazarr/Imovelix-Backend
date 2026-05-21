@@ -16,6 +16,7 @@ import com.api.imovelix.models.SystemUser;
 import com.api.imovelix.models.UserAuthentication;
 import com.api.imovelix.repositories.SystemUserRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
+import com.api.imovelix.services.security.CurrentUserService;
 import com.api.imovelix.services.security.PasswordHasher;
 
 @Service
@@ -25,19 +26,22 @@ public class SystemUserService {
     private final SystemUserMapper systemUserMapper;
     private final UserAuthenticationMapper userAuthenticationMapper;
     private final PasswordHasher passwordHasher;
+    private final CurrentUserService currentUserService;
 
     public SystemUserService(
         SystemUserRepository systemUserRepository,
         UserAuthenticationRepository userAuthenticationRepository,
         SystemUserMapper systemUserMapper,
         UserAuthenticationMapper userAuthenticationMapper,
-        PasswordHasher passwordHasher
+        PasswordHasher passwordHasher,
+        CurrentUserService currentUserService
     ) {
         this.systemUserRepository = systemUserRepository;
         this.userAuthenticationRepository = userAuthenticationRepository;
         this.systemUserMapper = systemUserMapper;
         this.userAuthenticationMapper = userAuthenticationMapper;
         this.passwordHasher = passwordHasher;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
@@ -58,19 +62,18 @@ public class SystemUserService {
 
     @Transactional(readOnly = true)
     public List<SystemUserResponse> findAll() {
-        return systemUserRepository.findAll()
-            .stream()
-            .map(systemUserMapper::toResponse)
-            .toList();
+        return List.of(systemUserMapper.toResponse(getEntity(currentUserService.currentUserId())));
     }
 
     @Transactional(readOnly = true)
     public SystemUserResponse findById(Long id) {
+        currentUserService.requireCurrentUser(id);
         return systemUserMapper.toResponse(getEntity(id));
     }
 
     @Transactional
     public SystemUserResponse update(Long id, UpdateSystemUserRequest request) {
+        currentUserService.requireCurrentUser(id);
         SystemUser systemUser = getEntity(id);
         ensureCpfIsAvailable(request.cpf(), id);
 
@@ -85,6 +88,7 @@ public class SystemUserService {
 
     @Transactional
     public void deactivate(Long id) {
+        currentUserService.requireCurrentUser(id);
         SystemUser systemUser = getEntity(id);
         systemUser.setActive(false);
         systemUserRepository.save(systemUser);

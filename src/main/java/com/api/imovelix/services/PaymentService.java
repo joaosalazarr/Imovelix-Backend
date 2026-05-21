@@ -35,12 +35,14 @@ public class PaymentService {
     @Transactional
     public PaymentResponse create(RegisterPaymentRequest request) {
         TaxCalculation taxCalculation = taxCalculationService.getEntity(request.taxCalculationId());
+        taxCalculationService.requireTaxCalculationOwner(taxCalculation);
         Payment payment = paymentMapper.toEntity(request, taxCalculation);
         return paymentMapper.toResponse(paymentRepository.save(payment));
     }
 
     @Transactional(readOnly = true)
     public List<PaymentResponse> findByTaxCalculation(Long taxCalculationId) {
+        taxCalculationService.requireTaxCalculationOwner(taxCalculationService.getEntity(taxCalculationId));
         return paymentRepository.findByTaxCalculationId(taxCalculationId)
             .stream()
             .map(paymentMapper::toResponse)
@@ -49,12 +51,15 @@ public class PaymentService {
 
     @Transactional(readOnly = true)
     public PaymentResponse findById(Long id) {
-        return paymentMapper.toResponse(getEntity(id));
+        Payment payment = getEntity(id);
+        taxCalculationService.requireTaxCalculationOwner(payment.getTaxCalculation());
+        return paymentMapper.toResponse(payment);
     }
 
     @Transactional
     public PaymentResponse update(Long id, UpdatePaymentRequest request) {
         Payment payment = getEntity(id);
+        taxCalculationService.requireTaxCalculationOwner(payment.getTaxCalculation());
         paymentMapper.updateEntity(request, payment);
         return paymentMapper.toResponse(paymentRepository.save(payment));
     }
@@ -62,13 +67,16 @@ public class PaymentService {
     @Transactional
     public PaymentResponse updateStatus(Long id, UpdatePaymentStatusRequest request) {
         Payment payment = getEntity(id);
+        taxCalculationService.requireTaxCalculationOwner(payment.getTaxCalculation());
         paymentMapper.updateStatus(request, payment);
         return paymentMapper.toResponse(paymentRepository.save(payment));
     }
 
     @Transactional
     public void delete(Long id) {
-        paymentRepository.delete(getEntity(id));
+        Payment payment = getEntity(id);
+        taxCalculationService.requireTaxCalculationOwner(payment.getTaxCalculation());
+        paymentRepository.delete(payment);
     }
 
     public Payment getEntity(Long id) {

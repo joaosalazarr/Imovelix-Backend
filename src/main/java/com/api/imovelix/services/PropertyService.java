@@ -25,6 +25,7 @@ import com.api.imovelix.models.Property;
 import com.api.imovelix.models.SystemUser;
 import com.api.imovelix.repositories.PropertyRepository;
 import com.api.imovelix.repositories.TaxCalculationRepository;
+import com.api.imovelix.services.security.CurrentUserService;
 
 @Service
 public class PropertyService {
@@ -45,23 +46,27 @@ public class PropertyService {
     private final SystemUserService systemUserService;
     private final PropertyMapper propertyMapper;
     private final TaxCalculationMapper taxCalculationMapper;
+    private final CurrentUserService currentUserService;
 
     public PropertyService(
         PropertyRepository propertyRepository,
         TaxCalculationRepository taxCalculationRepository,
         SystemUserService systemUserService,
         PropertyMapper propertyMapper,
-        TaxCalculationMapper taxCalculationMapper
+        TaxCalculationMapper taxCalculationMapper,
+        CurrentUserService currentUserService
     ) {
         this.propertyRepository = propertyRepository;
         this.taxCalculationRepository = taxCalculationRepository;
         this.systemUserService = systemUserService;
         this.propertyMapper = propertyMapper;
         this.taxCalculationMapper = taxCalculationMapper;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
     public PropertyResponse create(RegisterPropertyRequest request) {
+        currentUserService.requireCurrentUser(request.userId());
         SystemUser systemUser = systemUserService.getEntity(request.userId());
         Property property = propertyMapper.toEntity(request, systemUser);
         return propertyMapper.toResponse(propertyRepository.save(property));
@@ -69,17 +74,22 @@ public class PropertyService {
 
     @Transactional(readOnly = true)
     public PageResponse<PropertyResponse> findAll(ListPropertiesRequest request) {
+        Long authenticatedUserId = currentUserService.currentUserId();
+        if (request.userId() != null && !authenticatedUserId.equals(request.userId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
         Pageable pageable = PageRequest.of(
             request.pageOrDefault(),
             request.sizeOrDefault(),
             Sort.by(sortDirection(request), sortField(request))
         );
 
-        return PageResponse.from(propertyRepository.findAll(specification(request), pageable).map(propertyMapper::toResponse));
+        return PageResponse.from(propertyRepository.findAll(specification(request, authenticatedUserId), pageable).map(propertyMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
     public List<PropertyResponse> findByUser(Long userId) {
+        currentUserService.requireCurrentUser(userId);
         return propertyRepository.findBySystemUserId(userId)
             .stream()
             .map(propertyMapper::toResponse)
@@ -89,6 +99,7 @@ public class PropertyService {
     @Transactional(readOnly = true)
     public PropertyDetailsResponse findDetailsById(Long id) {
         Property property = getEntity(id);
+        requirePropertyOwner(property);
         return propertyMapper.toDetailsResponse(
             property,
             taxCalculationRepository.findByPropertyId(id)
@@ -101,13 +112,16 @@ public class PropertyService {
     @Transactional
     public PropertyResponse update(Long id, UpdatePropertyRequest request) {
         Property property = getEntity(id);
+        requirePropertyOwner(property);
         propertyMapper.updateEntity(request, property);
         return propertyMapper.toResponse(propertyRepository.save(property));
     }
 
     @Transactional
     public void delete(Long id) {
-        propertyRepository.delete(getEntity(id));
+        Property property = getEntity(id);
+        requirePropertyOwner(property);
+        propertyRepository.delete(property);
     }
 
     public Property getEntity(Long id) {
@@ -127,9 +141,13 @@ public class PropertyService {
         return sortBy;
     }
 
-    private Specification<Property> specification(ListPropertiesRequest request) {
+    public void requirePropertyOwner(Property property) {
+        currentUserService.requireCurrentUser(property.getSystemUser().getId());
+    }
+
+    private Specification<Property> specification(ListPropertiesRequest request, Long authenticatedUserId) {
         return Specification
-            .where(equalsValue("systemUser.id", request.userId()))
+            .where(equalsValue("systemUser.id", authenticatedUserId))
             .and(equalsValue("propertyType", request.propertyType()))
             .and(equalsValue("pourpose", request.pourpose()))
             .and(likeIgnoreCase("city", request.city()))
