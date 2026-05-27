@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.api.imovelix.repositories.UserAuthenticationRepository;
+import com.api.imovelix.services.security.contracts.JwtServicePort;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,11 +27,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String API_PREFIX = "/api/v1/";
     private static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtService jwtService;
+    private final JwtServicePort jwtService;
     private final UserAuthenticationRepository userAuthenticationRepository;
 
     public JwtAuthenticationFilter(
-        JwtService jwtService,
+        JwtServicePort jwtService,
         UserAuthenticationRepository userAuthenticationRepository
     ) {
         this.jwtService = jwtService;

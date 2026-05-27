@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.imovelix.dto.request.RegisterSystemUserRequest;
 import com.api.imovelix.dto.request.UpdateSystemUserRequest;
 import com.api.imovelix.dto.response.SystemUserResponse;
-import com.api.imovelix.services.SystemUserService;
+import com.api.imovelix.services.contracts.SystemUserServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -24,9 +24,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/users")
 public class SystemUserController {
-    private final SystemUserService systemUserService;
+    private final SystemUserServicePort systemUserService;
 
-    public SystemUserController(SystemUserService systemUserService) {
+    public SystemUserController(SystemUserServicePort systemUserService) {
         this.systemUserService = systemUserService;
     }
 

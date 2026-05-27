@@ -18,7 +18,7 @@ import com.api.imovelix.dto.request.RegisterPaymentRequest;
 import com.api.imovelix.dto.request.UpdatePaymentRequest;
 import com.api.imovelix.dto.request.UpdatePaymentStatusRequest;
 import com.api.imovelix.dto.response.PaymentResponse;
-import com.api.imovelix.services.PaymentService;
+import com.api.imovelix.services.contracts.PaymentServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -26,9 +26,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/payments")
 public class PaymentController {
-    private final PaymentService paymentService;
+    private final PaymentServicePort paymentService;
 
-    public PaymentController(PaymentService paymentService) {
+    public PaymentController(PaymentServicePort paymentService) {
         this.paymentService = paymentService;
     }
 

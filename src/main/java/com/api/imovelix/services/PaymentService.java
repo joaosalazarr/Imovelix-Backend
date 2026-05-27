@@ -15,16 +15,18 @@ import com.api.imovelix.mappers.PaymentMapper;
 import com.api.imovelix.models.Payment;
 import com.api.imovelix.models.TaxCalculation;
 import com.api.imovelix.repositories.PaymentRepository;
+import com.api.imovelix.services.contracts.PaymentServicePort;
+import com.api.imovelix.services.contracts.TaxCalculationServicePort;
 
 @Service
-public class PaymentService {
+public class PaymentService implements PaymentServicePort {
     private final PaymentRepository paymentRepository;
-    private final TaxCalculationService taxCalculationService;
+    private final TaxCalculationServicePort taxCalculationService;
     private final PaymentMapper paymentMapper;
 
     public PaymentService(
         PaymentRepository paymentRepository,
-        TaxCalculationService taxCalculationService,
+        TaxCalculationServicePort taxCalculationService,
         PaymentMapper paymentMapper
     ) {
         this.paymentRepository = paymentRepository;

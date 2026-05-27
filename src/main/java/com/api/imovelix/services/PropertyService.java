@@ -25,10 +25,12 @@ import com.api.imovelix.models.Property;
 import com.api.imovelix.models.SystemUser;
 import com.api.imovelix.repositories.PropertyRepository;
 import com.api.imovelix.repositories.TaxCalculationRepository;
-import com.api.imovelix.services.security.CurrentUserService;
+import com.api.imovelix.services.contracts.PropertyServicePort;
+import com.api.imovelix.services.contracts.SystemUserServicePort;
+import com.api.imovelix.services.security.contracts.CurrentUserPort;
 
 @Service
-public class PropertyService {
+public class PropertyService implements PropertyServicePort {
     private static final Set<String> SORTABLE_FIELDS = Set.of(
         "id",
         "propertyType",
@@ -43,18 +45,18 @@ public class PropertyService {
 
     private final PropertyRepository propertyRepository;
     private final TaxCalculationRepository taxCalculationRepository;
-    private final SystemUserService systemUserService;
+    private final SystemUserServicePort systemUserService;
     private final PropertyMapper propertyMapper;
     private final TaxCalculationMapper taxCalculationMapper;
-    private final CurrentUserService currentUserService;
+    private final CurrentUserPort currentUserService;
 
     public PropertyService(
         PropertyRepository propertyRepository,
         TaxCalculationRepository taxCalculationRepository,
-        SystemUserService systemUserService,
+        SystemUserServicePort systemUserService,
         PropertyMapper propertyMapper,
         TaxCalculationMapper taxCalculationMapper,
-        CurrentUserService currentUserService
+        CurrentUserPort currentUserService
     ) {
         this.propertyRepository = propertyRepository;
         this.taxCalculationRepository = taxCalculationRepository;

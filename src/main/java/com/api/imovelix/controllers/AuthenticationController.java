@@ -15,7 +15,7 @@ import com.api.imovelix.dto.request.UpdatePasswordRequest;
 import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.AuthInfoResponse;
 import com.api.imovelix.dto.response.LoginResponse;
-import com.api.imovelix.services.AuthenticationService;
+import com.api.imovelix.services.contracts.AuthenticationServicePort;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,9 +24,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthenticationController {
-    private final AuthenticationService authenticationService;
+    private final AuthenticationServicePort authenticationService;
 
-    public AuthenticationController(AuthenticationService authenticationService) {
+    public AuthenticationController(AuthenticationServicePort authenticationService) {
         this.authenticationService = authenticationService;
     }
 

@@ -18,37 +18,38 @@ import com.api.imovelix.models.MfaFactor;
 import com.api.imovelix.models.UserAuthentication;
 import com.api.imovelix.repositories.MfaFactorRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
-import com.api.imovelix.services.security.CurrentUserService;
-import com.api.imovelix.services.security.JwtService;
-import com.api.imovelix.services.security.LoginAttemptService;
-import com.api.imovelix.services.security.PasswordHasher;
-import com.api.imovelix.services.security.SecretEncryptionService;
-import com.api.imovelix.services.security.TotpService;
+import com.api.imovelix.services.contracts.AuthenticationServicePort;
+import com.api.imovelix.services.security.contracts.CurrentUserPort;
+import com.api.imovelix.services.security.contracts.JwtServicePort;
+import com.api.imovelix.services.security.contracts.LoginAttemptPort;
+import com.api.imovelix.services.security.contracts.PasswordHasherPort;
+import com.api.imovelix.services.security.contracts.SecretEncryptionPort;
+import com.api.imovelix.services.security.contracts.TotpServicePort;
 
 @Service
-public class AuthenticationService {
+public class AuthenticationService implements AuthenticationServicePort {
     private final UserAuthenticationRepository userAuthenticationRepository;
     private final UserAuthenticationMapper userAuthenticationMapper;
     private final MfaFactorRepository mfaFactorRepository;
     private final SystemUserMapper systemUserMapper;
-    private final PasswordHasher passwordHasher;
-    private final JwtService jwtService;
-    private final CurrentUserService currentUserService;
-    private final LoginAttemptService loginAttemptService;
-    private final TotpService totpService;
-    private final SecretEncryptionService secretEncryptionService;
+    private final PasswordHasherPort passwordHasher;
+    private final JwtServicePort jwtService;
+    private final CurrentUserPort currentUserService;
+    private final LoginAttemptPort loginAttemptService;
+    private final TotpServicePort totpService;
+    private final SecretEncryptionPort secretEncryptionService;
 
     public AuthenticationService(
         UserAuthenticationRepository userAuthenticationRepository,
         UserAuthenticationMapper userAuthenticationMapper,
         MfaFactorRepository mfaFactorRepository,
         SystemUserMapper systemUserMapper,
-        PasswordHasher passwordHasher,
-        JwtService jwtService,
-        CurrentUserService currentUserService,
-        LoginAttemptService loginAttemptService,
-        TotpService totpService,
-        SecretEncryptionService secretEncryptionService
+        PasswordHasherPort passwordHasher,
+        JwtServicePort jwtService,
+        CurrentUserPort currentUserService,
+        LoginAttemptPort loginAttemptService,
+        TotpServicePort totpService,
+        SecretEncryptionPort secretEncryptionService
     ) {
         this.userAuthenticationRepository = userAuthenticationRepository;
         this.userAuthenticationMapper = userAuthenticationMapper;

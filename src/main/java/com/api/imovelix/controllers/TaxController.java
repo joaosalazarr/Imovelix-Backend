@@ -17,7 +17,7 @@ import com.api.imovelix.dto.request.RegisterTaxRequest;
 import com.api.imovelix.dto.request.UpdateTaxRequest;
 import com.api.imovelix.dto.response.TaxDetailsResponse;
 import com.api.imovelix.dto.response.TaxResponse;
-import com.api.imovelix.services.TaxService;
+import com.api.imovelix.services.contracts.TaxServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -25,9 +25,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/taxes")
 public class TaxController {
-    private final TaxService taxService;
+    private final TaxServicePort taxService;
 
-    public TaxController(TaxService taxService) {
+    public TaxController(TaxServicePort taxService) {
         this.taxService = taxService;
     }
 

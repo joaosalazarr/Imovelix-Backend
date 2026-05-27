@@ -18,28 +18,29 @@ import com.api.imovelix.models.MfaFactor;
 import com.api.imovelix.models.UserAuthentication;
 import com.api.imovelix.repositories.MfaFactorRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
-import com.api.imovelix.services.security.CurrentUserService;
-import com.api.imovelix.services.security.SecretEncryptionService;
-import com.api.imovelix.services.security.TotpService;
+import com.api.imovelix.services.contracts.MfaFactorServicePort;
+import com.api.imovelix.services.security.contracts.CurrentUserPort;
+import com.api.imovelix.services.security.contracts.SecretEncryptionPort;
+import com.api.imovelix.services.security.contracts.TotpServicePort;
 
 @Service
-public class MfaFactorService {
+public class MfaFactorService implements MfaFactorServicePort {
     private final SecureRandom secureRandom = new SecureRandom();
 
     private final MfaFactorRepository mfaFactorRepository;
     private final UserAuthenticationRepository userAuthenticationRepository;
     private final MfaFactorMapper mfaFactorMapper;
-    private final CurrentUserService currentUserService;
-    private final TotpService totpService;
-    private final SecretEncryptionService secretEncryptionService;
+    private final CurrentUserPort currentUserService;
+    private final TotpServicePort totpService;
+    private final SecretEncryptionPort secretEncryptionService;
 
     public MfaFactorService(
         MfaFactorRepository mfaFactorRepository,
         UserAuthenticationRepository userAuthenticationRepository,
         MfaFactorMapper mfaFactorMapper,
-        CurrentUserService currentUserService,
-        TotpService totpService,
-        SecretEncryptionService secretEncryptionService
+        CurrentUserPort currentUserService,
+        TotpServicePort totpService,
+        SecretEncryptionPort secretEncryptionService
     ) {
         this.mfaFactorRepository = mfaFactorRepository;
         this.userAuthenticationRepository = userAuthenticationRepository;

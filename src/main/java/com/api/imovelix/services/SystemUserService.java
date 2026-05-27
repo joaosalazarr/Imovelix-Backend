@@ -16,25 +16,26 @@ import com.api.imovelix.models.SystemUser;
 import com.api.imovelix.models.UserAuthentication;
 import com.api.imovelix.repositories.SystemUserRepository;
 import com.api.imovelix.repositories.UserAuthenticationRepository;
-import com.api.imovelix.services.security.CurrentUserService;
-import com.api.imovelix.services.security.PasswordHasher;
+import com.api.imovelix.services.contracts.SystemUserServicePort;
+import com.api.imovelix.services.security.contracts.CurrentUserPort;
+import com.api.imovelix.services.security.contracts.PasswordHasherPort;
 
 @Service
-public class SystemUserService {
+public class SystemUserService implements SystemUserServicePort {
     private final SystemUserRepository systemUserRepository;
     private final UserAuthenticationRepository userAuthenticationRepository;
     private final SystemUserMapper systemUserMapper;
     private final UserAuthenticationMapper userAuthenticationMapper;
-    private final PasswordHasher passwordHasher;
-    private final CurrentUserService currentUserService;
+    private final PasswordHasherPort passwordHasher;
+    private final CurrentUserPort currentUserService;
 
     public SystemUserService(
         SystemUserRepository systemUserRepository,
         UserAuthenticationRepository userAuthenticationRepository,
         SystemUserMapper systemUserMapper,
         UserAuthenticationMapper userAuthenticationMapper,
-        PasswordHasher passwordHasher,
-        CurrentUserService currentUserService
+        PasswordHasherPort passwordHasher,
+        CurrentUserPort currentUserService
     ) {
         this.systemUserRepository = systemUserRepository;
         this.userAuthenticationRepository = userAuthenticationRepository;

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.imovelix.dto.request.RegisterMfaFactorRequest;
 import com.api.imovelix.dto.request.VerifyMfaRequest;
 import com.api.imovelix.dto.response.MfaFactorResponse;
-import com.api.imovelix.services.MfaFactorService;
+import com.api.imovelix.services.contracts.MfaFactorServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -23,9 +23,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/mfa-factors")
 public class MfaFactorController {
-    private final MfaFactorService mfaFactorService;
+    private final MfaFactorServicePort mfaFactorService;
 
-    public MfaFactorController(MfaFactorService mfaFactorService) {
+    public MfaFactorController(MfaFactorServicePort mfaFactorService) {
         this.mfaFactorService = mfaFactorService;
     }
 

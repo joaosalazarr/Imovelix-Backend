@@ -9,8 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.api.imovelix.services.security.contracts.LoginAttemptPort;
+
 @Component
-public class LoginAttemptService {
+public class LoginAttemptService implements LoginAttemptPort {
     private static final int MAX_ATTEMPTS = 5;
     private static final Duration LOCK_DURATION = Duration.ofMinutes(15);
 

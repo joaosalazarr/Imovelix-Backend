@@ -10,8 +10,10 @@ import javax.crypto.spec.PBEKeySpec;
 
 import org.springframework.stereotype.Component;
 
+import com.api.imovelix.services.security.contracts.PasswordHasherPort;
+
 @Component
-public class PasswordHasher {
+public class PasswordHasher implements PasswordHasherPort {
     private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int ITERATIONS = 210_000;
     private static final int SALT_LENGTH = 16;

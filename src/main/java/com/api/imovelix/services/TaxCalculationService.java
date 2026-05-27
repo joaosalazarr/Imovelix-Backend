@@ -18,21 +18,24 @@ import com.api.imovelix.models.Tax;
 import com.api.imovelix.models.TaxCalculation;
 import com.api.imovelix.repositories.PaymentRepository;
 import com.api.imovelix.repositories.TaxCalculationRepository;
+import com.api.imovelix.services.contracts.PropertyServicePort;
+import com.api.imovelix.services.contracts.TaxCalculationServicePort;
+import com.api.imovelix.services.contracts.TaxServicePort;
 
 @Service
-public class TaxCalculationService {
+public class TaxCalculationService implements TaxCalculationServicePort {
     private final TaxCalculationRepository taxCalculationRepository;
     private final PaymentRepository paymentRepository;
-    private final PropertyService propertyService;
-    private final TaxService taxService;
+    private final PropertyServicePort propertyService;
+    private final TaxServicePort taxService;
     private final TaxCalculationMapper taxCalculationMapper;
     private final PaymentMapper paymentMapper;
 
     public TaxCalculationService(
         TaxCalculationRepository taxCalculationRepository,
         PaymentRepository paymentRepository,
-        PropertyService propertyService,
-        TaxService taxService,
+        PropertyServicePort propertyService,
+        TaxServicePort taxService,
         TaxCalculationMapper taxCalculationMapper,
         PaymentMapper paymentMapper
     ) {

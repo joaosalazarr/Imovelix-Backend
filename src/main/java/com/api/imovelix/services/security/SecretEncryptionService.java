@@ -12,8 +12,10 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.api.imovelix.services.security.contracts.SecretEncryptionPort;
+
 @Component
-public class SecretEncryptionService {
+public class SecretEncryptionService implements SecretEncryptionPort {
     private static final String PREFIX = "aesgcm:";
     private static final String CIPHER = "AES/GCM/NoPadding";
     private static final int IV_LENGTH = 12;

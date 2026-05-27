@@ -6,8 +6,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.api.imovelix.services.security.contracts.CurrentUserPort;
+
 @Component
-public class CurrentUserService {
+public class CurrentUserService implements CurrentUserPort {
     public AuthenticatedUser currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {

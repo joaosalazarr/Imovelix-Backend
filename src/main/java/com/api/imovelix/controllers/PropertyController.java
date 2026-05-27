@@ -21,7 +21,7 @@ import com.api.imovelix.dto.request.UpdatePropertyRequest;
 import com.api.imovelix.dto.response.PageResponse;
 import com.api.imovelix.dto.response.PropertyDetailsResponse;
 import com.api.imovelix.dto.response.PropertyResponse;
-import com.api.imovelix.services.PropertyService;
+import com.api.imovelix.services.contracts.PropertyServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -30,9 +30,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/properties")
 public class PropertyController {
-    private final PropertyService propertyService;
+    private final PropertyServicePort propertyService;
 
-    public PropertyController(PropertyService propertyService) {
+    public PropertyController(PropertyServicePort propertyService) {
         this.propertyService = propertyService;
     }
 

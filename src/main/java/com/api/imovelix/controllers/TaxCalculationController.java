@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.api.imovelix.dto.request.RegisterTaxCalculationRequest;
 import com.api.imovelix.dto.response.TaxCalculationResponse;
 import com.api.imovelix.dto.response.TaxCalculationSummaryResponse;
-import com.api.imovelix.services.TaxCalculationService;
+import com.api.imovelix.services.contracts.TaxCalculationServicePort;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -23,9 +23,9 @@ import jakarta.validation.constraints.Positive;
 @RestController
 @RequestMapping("/api/v1/tax-calculations")
 public class TaxCalculationController {
-    private final TaxCalculationService taxCalculationService;
+    private final TaxCalculationServicePort taxCalculationService;
 
-    public TaxCalculationController(TaxCalculationService taxCalculationService) {
+    public TaxCalculationController(TaxCalculationServicePort taxCalculationService) {
         this.taxCalculationService = taxCalculationService;
     }
 

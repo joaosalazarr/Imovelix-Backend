@@ -16,9 +16,10 @@ import com.api.imovelix.mappers.TaxMapper;
 import com.api.imovelix.models.Tax;
 import com.api.imovelix.repositories.TaxCalculationRepository;
 import com.api.imovelix.repositories.TaxRepository;
+import com.api.imovelix.services.contracts.TaxServicePort;
 
 @Service
-public class TaxService {
+public class TaxService implements TaxServicePort {
     private final TaxRepository taxRepository;
     private final TaxCalculationRepository taxCalculationRepository;
     private final TaxMapper taxMapper;

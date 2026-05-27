@@ -15,9 +15,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.api.imovelix.models.UserAuthentication;
+import com.api.imovelix.services.security.contracts.JwtServicePort;
 
 @Component
-public class JwtService {
+public class JwtService implements JwtServicePort {
     private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final Pattern NUMBER_CLAIM_PATTERN = Pattern.compile("\"%s\"\\s*:\\s*(\\d+)");
 

@@ -10,8 +10,10 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.stereotype.Component;
 
+import com.api.imovelix.services.security.contracts.TotpServicePort;
+
 @Component
-public class TotpService {
+public class TotpService implements TotpServicePort {
     private static final String HMAC_ALGORITHM = "HmacSHA1";
     private static final long TIME_STEP_SECONDS = 30;
     private static final int CODE_DIGITS = 6;
